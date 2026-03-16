@@ -22,20 +22,6 @@ A personal finance management iOS application built with **SwiftUI** and **Swift
 - Xcode 15.0+
 - Swift 5.9+
 
-## Installation
-
-1. Clone this repository to your local machine:
-   ```bash
-   git clone https://github.com/your-username/FinancialTracker.git
-   ```
-2. Open the project in Xcode:
-   ```bash
-   cd FinancialTracker
-   open FinancialTracker.xcodeproj
-   ```
-3. Wait for Xcode to resolve any Swift Package Manager dependencies (if applicable).
-4. Select an iOS Simulator or connected iOS Device (iOS 17.0+) as the run destination.
-5. Press `Cmd + R` to build and run the application.
 
 ## Directory Structure
 
@@ -45,15 +31,4 @@ A personal finance management iOS application built with **SwiftUI** and **Swift
 - `Services`: Reusable managers and utility classes.
 - `Helpers`: Extension methods, custom modifiers, and app-wide constants.
 
-## Contributing
 
-Contributions are welcome! If you'd like to improve the app or add new features:
-1. Fork the project.
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
