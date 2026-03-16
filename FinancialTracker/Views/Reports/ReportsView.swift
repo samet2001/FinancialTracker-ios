@@ -8,6 +8,7 @@ import SwiftData
 import Charts
 
 // MARK: - Chart Data Models
+/// Carrier structure for category data we will show in the pie chart
 /// Pasta grafiğinde göstereceğimiz kategori verileri için taşıyıcı yapı
 struct CategoryChartData: Identifiable {
     let id = UUID()
@@ -16,6 +17,7 @@ struct CategoryChartData: Identifiable {
     let color: Color
 }
 
+/// Carrier structure for monthly income-expense data we will show in the line chart
 /// Çizgi grafikte göstereceğimiz aylık gelir-gider verileri için taşıyıcı yapı
 struct MonthlyChartData: Identifiable {
     let id = UUID()
@@ -24,14 +26,16 @@ struct MonthlyChartData: Identifiable {
     let expense: Double
 }
 
+/// Reports screen visualizes the user's data with Swift Charts
 /// Raporlar ekranı, Swift Charts ile kullanıcının verilerini görselleştirir
 struct ReportsView: View {
-    // İşlemleri yeniden eskiye sorgulama
+    // Querying transactions from newest to oldest / İşlemleri yeniden eskiye sorgulama
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     
     // View Model
     @State private var viewModel = TransactionViewModel()
     
+    // Holds which chart type (0: Pie category, 1: Line monthly) will be shown
     // Hangi grafik türünün (0: Pasta kategori, 1: Çizgi aylık) gösterileceğini tutar
     @State private var selectedChartType = 0
     
@@ -39,7 +43,7 @@ struct ReportsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Grafik tipi seçimi (Segmented Control)
+                    // Chart type selection (Segmented Control) / Grafik tipi seçimi (Segmented Control)
                     Picker("Grafik Türü", selection: $selectedChartType) {
                         Text("Harcama Dağılımı").tag(0)
                         Text("Aylık Trend").tag(1)
@@ -47,10 +51,11 @@ struct ReportsView: View {
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
                     
-                    // İşlem yoksa boş state gösteririz
+                    // Show empty state if there are no transactions / İşlem yoksa boş state gösteririz
                     if transactions.isEmpty {
                         emptyState
                     } else {
+                        // Show relevant chart and sub-detail area depending on selection
                         // Seçime göre ilgili grafik ve alt detay alanını göster
                         if selectedChartType == 0 {
                             expensePieChart
@@ -70,7 +75,7 @@ struct ReportsView: View {
     
     // MARK: - Expense Pie Chart (Gider Pasta Grafiği)
     private var expensePieChart: some View {
-        // ViewModel aracılığıyla giderleri kategorize ediyoruz
+        // Categorizing expenses via ViewModel / ViewModel aracılığıyla giderleri kategorize ediyoruz
         let data = viewModel.expensesByCategory(transactions: transactions)
         
         let chartData = data.map { item in
@@ -87,25 +92,25 @@ struct ReportsView: View {
             Text("Harcama Dağılımı")
                 .font(.headline)
             
-            // Gider kaydı yoksa uyarı çıkart
+            // Alert if no expense record exists / Gider kaydı yoksa uyarı çıkart
             if chartData.isEmpty {
                 Text("Henüz gider kaydı yok")
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 40)
             } else {
-                // Pasta grafik çizimi (Swift Charts)
+                // Pie chart drawing (Swift Charts) / Pasta grafik çizimi (Swift Charts)
                 Chart(chartData) { item in
                     SectorMark(
                         angle: .value("Tutar", item.amount),
-                        innerRadius: .ratio(0.6), // Ortasını boş bırakan donut stili
-                        angularInset: 2 // Pasta dilimleri arası küçük boşluk payı
+                        innerRadius: .ratio(0.6), // Donut style leaving the middle empty / Ortasını boş bırakan donut stili
+                        angularInset: 2 // Small gap margin between pie slices / Pasta dilimleri arası küçük boşluk payı
                     )
                     .foregroundStyle(item.color)
                     .cornerRadius(4)
                     .annotation(position: .overlay) {
-                        // Yüzdelik hesaplama ve gösterim
+                        // Percentage calculation and display / Yüzdelik hesaplama ve gösterim
                         let percent = totalExpense > 0 ? (item.amount / totalExpense * 100) : 0
-                        // Sadece %5'ten büyük dilimlerde değeri yazıp karışıklığı engelliyoruz
+                        // Writing the value only in slices larger than 5% to prevent confusion / Sadece %5'ten büyük dilimlerde değeri yazıp karışıklığı engelliyoruz
                         if percent > 5 {
                             Text(String(format: "%.0f%%", percent))
                                 .font(.caption2.bold())
@@ -114,6 +119,7 @@ struct ReportsView: View {
                     }
                 }
                 .frame(height: 250)
+                // Background component that prints the total amount right in the middle of the chart
                 // Grafiğin tam ortasına toplam tutarı yazdıran background bileşeni
                 .chartBackground { _ in
                     VStack {
@@ -183,16 +189,16 @@ struct ReportsView: View {
             } else {
                 Chart {
                     ForEach(chartData) { item in
-                        // Gelir çizgisi
+                        // Income line / Gelir çizgisi
                         LineMark(
                             x: .value("Ay", item.month),
                             y: .value("Tutar", item.income)
                         )
                         .foregroundStyle(Color.incomeGreen)
                         .symbol(Circle())
-                        .interpolationMethod(.catmullRom) // Eğimi yumuşatır
+                        .interpolationMethod(.catmullRom) // Smooths the slope / Eğimi yumuşatır
                         
-                        // Gelir çizgi altı dolgusu (AreaMark)
+                        // Fill under income line (AreaMark) / Gelir çizgi altı dolgusu (AreaMark)
                         AreaMark(
                             x: .value("Ay", item.month),
                             y: .value("Tutar", item.income)
@@ -206,7 +212,7 @@ struct ReportsView: View {
                         )
                         .interpolationMethod(.catmullRom)
                         
-                        // Gider çizgisi
+                        // Expense line / Gider çizgisi
                         LineMark(
                             x: .value("Ay", item.month),
                             y: .value("Tutar", item.expense)
@@ -215,7 +221,7 @@ struct ReportsView: View {
                         .symbol(Circle())
                         .interpolationMethod(.catmullRom)
                         
-                        // Gider çizgi altı dolgusu (AreaMark)
+                        // Fill under expense line (AreaMark) / Gider çizgi altı dolgusu (AreaMark)
                         AreaMark(
                             x: .value("Ay", item.month),
                             y: .value("Tutar", item.expense)
@@ -231,6 +237,7 @@ struct ReportsView: View {
                     }
                 }
                 .frame(height: 250)
+                // Display of values on the Y-axis (formatted currency)
                 // Y-eksenindeki değerlerin gösterimi (formatlı para birimi)
                 .chartYAxis {
                     AxisMarks(position: .leading) { value in
@@ -244,7 +251,7 @@ struct ReportsView: View {
                 }
             }
             
-            // Çizgi Grafiği Açıklama Satırı (Legend)
+            // Line Chart Legend / Çizgi Grafiği Açıklama Satırı (Legend)
             HStack(spacing: 20) {
                 HStack(spacing: 4) {
                     Circle()
@@ -274,6 +281,7 @@ struct ReportsView: View {
             Text("Aylık Özet")
                 .font(.headline)
             
+            // Print beneath the list by at least reversing months from newest to oldest
             // Ayları en azından yeniden eskiye çevirerek liste altına bas
             ForEach(Array(data.reversed()), id: \.month) { item in
                 HStack {

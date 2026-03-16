@@ -6,15 +6,17 @@
 import SwiftUI
 import SwiftData
 
+/// The application's main summary screen. It brings together cash, investment, recent transactions, and market data.
 /// Uygulamanın ana özet ekranı. Nakit, yatırım, son işlemler ve piyasa verisini bir araya getirir.
 struct DashboardView: View {
-    // Veritabanı işlemleri
+    // Database operations / Veritabanı işlemleri
     @Environment(\.modelContext) private var modelContext
-    // İşlemleri yeniden eskiye sorgula
+    // Query transactions from newest to oldest / İşlemleri yeniden eskiye sorgula
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
-    // Yatırım cüzdanlarını sorgula
+    // Query investment wallets / Yatırım cüzdanlarını sorgula
     @Query private var assets: [InvestmentAsset]
     
+    // Definitions of view models and service class via State
     // View modelleri ve servis sınıfının State üzerinden tanımlanmaları
     @State private var viewModel = DashboardViewModel()
     @State private var exchangeService = ExchangeRateService()
@@ -22,23 +24,26 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                // Showing vertical components in order downwards
                 // Aşağı doğru dikey bileşenleri sırayla gösteriyoruz
                 VStack(spacing: 16) {
-                    netWorthCard              // Toplam Varlık Alanı
-                    marketPricesSection       // Canlı Piyasa Kurları
-                    monthlySummarySection     // İçinde Bulunan Ayın Özeti
-                    quickStatsRow             // Toplam Gelir ve Gider İstatislikleri
-                    recentTransactionsSection // En Son Yapılan 5 İşlem
+                    netWorthCard              // Total Asset Area / Toplam Varlık Alanı
+                    marketPricesSection       // Live Market Rates / Canlı Piyasa Kurları
+                    monthlySummarySection     // Summary of Current Month / İçinde Bulunan Ayın Özeti
+                    quickStatsRow             // Total Income and Expense Statistics / Toplam Gelir ve Gider İstatislikleri
+                    recentTransactionsSection // Last 5 Transactions Performed / En Son Yapılan 5 İşlem
                 }
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Finans Asistanı") // Ana sayfa üst başlığı
+            .navigationTitle("Finans Asistanı") // Home page main title / Ana sayfa üst başlığı
             .refreshable {
+                // Update live rates when pulled down on screen
                 // Ekranda aşağı çekildiğinde canlı kurları güncelle
                 await exchangeService.fetchRates()
             }
             .task {
+                // Fetch rates on first page load
                 // İlk sayfa yüklenmesinde kurları çek
                 await exchangeService.fetchRates()
             }
@@ -50,8 +55,9 @@ struct DashboardView: View {
         VStack(spacing: 12) {
             Text("Toplam Varlık")
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.8)) // Yarı saydam beyaz okunurluk için
+                .foregroundStyle(.white.opacity(0.8)) // For readability with semi-transparent white / Yarı saydam beyaz okunurluk için
             
+            // Shows the total calculated net cash and investments of the user via ViewModel
             // ViewModel üstünden hesaplanmış toplam kullanıcının nakti ve yatırımlarını gösterir
             Text(viewModel.totalNetWorth(
                 transactions: transactions,
@@ -61,6 +67,7 @@ struct DashboardView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
             
+            // Bottom part: Cash Balance, Investment, Profit-Loss divisions
             // Alt kısım: Nakit Bakiye, Yatırım, Kar-Zarar bölmeleri
             HStack(spacing: 20) {
                 // 1. Nakit Bakiye
@@ -73,12 +80,12 @@ struct DashboardView: View {
                         .foregroundStyle(.white)
                 }
                 
-                // Ayırıcı dikey çizgi
+                // Vertical divider line / Ayırıcı dikey çizgi
                 Divider()
                     .frame(height: 30)
                     .background(.white.opacity(0.3))
                 
-                // 2. Sadece Yatırımların canlı değeri
+                // 2. Only the live value of investments / Sadece Yatırımların canlı değeri
                 VStack(spacing: 4) {
                     Text("Yatırım Değeri")
                         .font(.caption)
@@ -92,7 +99,7 @@ struct DashboardView: View {
                     .frame(height: 30)
                     .background(.white.opacity(0.3))
                 
-                // 3. Kar/Zarar Göstergesi
+                // 3. Profit/Loss Indicator / Kar/Zarar Göstergesi
                 VStack(spacing: 4) {
                     let pl = viewModel.totalUnrealizedPL(assets: assets, exchangeService: exchangeService)
                     Text("Kar/Zarar")
@@ -105,27 +112,28 @@ struct DashboardView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .gradientCard() // Eklentilerden tanımlanan degrade geçişli kart görünümü
+        .gradientCard() // Gradient card view defined from extensions / Eklentilerden tanımlanan degrade geçişli kart görünümü
     }
     
     // MARK: - Market Prices (Canlı Kurlar Kartı)
     private var marketPricesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Başlık ve son yenilenme saati
+            // Title and last refresh time / Başlık ve son yenilenme saati
             HStack {
                 Text("Anlık Piyasa")
                     .font(.headline)
                 Spacer()
-                if exchangeService.isLoading { // İstek sürüyorsa dönen çember
+                if exchangeService.isLoading { // Spinning circle if request is ongoing / İstek sürüyorsa dönen çember
                     ProgressView()
                         .scaleEffect(0.8)
-                } else { // İstek bittiyse en son güncellenme tarihini göster
+                } else { // Show last updated date if request finished / İstek bittiyse en son güncellenme tarihini göster
                     Text(exchangeService.marketPrices.lastUpdated.formattedTime)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             
+            // Exchange rate types arrangement in a horizontal row
             // Döviz türleri sıralaması yatay bir satırda
             HStack(spacing: 12) {
                 marketPriceItem(
@@ -150,6 +158,7 @@ struct DashboardView: View {
                 )
             }
             
+            // API error message coming from server if internet is disconnected etc.
             // Eğer internet koparsa vb. sunucudan gelen API hata mesajı
             if let error = exchangeService.errorMessage {
                 Text(error)
@@ -160,6 +169,7 @@ struct DashboardView: View {
         .cardStyle()
     }
     
+    /// Reusable UI component that sets the exchange rate box as a template
     /// Döviz kurunun kutucuğunu şablon olarak ayarlayan tekrar kullanımlı arayüz bileşeni
     private func marketPriceItem(title: String, value: Double, icon: String, color: Color) -> some View {
         VStack(spacing: 6) {
@@ -174,10 +184,11 @@ struct DashboardView: View {
             Text(value.formattedCurrency)
                 .font(.caption.bold())
                 .lineLimit(1)
-                .minimumScaleFactor(0.7) // Ekrana sığmazsa metni %30 kadar küçültür
+                .minimumScaleFactor(0.7) // Shrinks the text by up to 30% if it doesn't fit on screen / Ekrana sığmazsa metni %30 kadar küçültür
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
+        // Creating a nice theme by filling the background color of the card with 10% transparency of the icon color
         // Kartın zemin rengini ikon renginin %10 şeffaflığıyla doldurarak hoş bir tema yaratıyoruz
         .background(color.opacity(0.1)) 
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -190,7 +201,7 @@ struct DashboardView: View {
                 .font(.headline)
             
             HStack(spacing: 16) {
-                // Ayın genel karı
+                // Monthly overall profit / Ayın genel karı
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Circle()
@@ -207,7 +218,7 @@ struct DashboardView: View {
                 
                 Spacer()
                 
-                // Ayın genel zararı
+                // Monthly overall loss / Ayın genel zararı
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack {
                         Text("Gider")
@@ -245,6 +256,7 @@ struct DashboardView: View {
         }
     }
     
+    /// Template function for quick overview
     /// Hızlı genel bakış için şablon fonksiyonu
     private func statCard(title: String, value: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -270,11 +282,12 @@ struct DashboardView: View {
             Text("Son İşlemler")
                 .font(.headline)
             
+            // Only the last 5 transactions are taken from inside the ViewModel
             // ViewModel içerisinden sadece en son 5 işlem alınır
             let recent = viewModel.recentTransactions(transactions: transactions)
             
             if recent.isEmpty {
-                // İşlem yoksa boş alan
+                // Empty area if no transactions / İşlem yoksa boş alan
                 VStack(spacing: 8) {
                     Image(systemName: "tray")
                         .font(.largeTitle)
@@ -287,8 +300,8 @@ struct DashboardView: View {
                 .padding(.vertical, 20)
             } else {
                 ForEach(recent, id: \.id) { transaction in
-                    transactionRow(transaction) // İşlem hücresini ekle
-                    // Aralarındaki ayırıcı çizgi: son işlemde çizilmesin
+                    transactionRow(transaction) // Add transaction cell / İşlem hücresini ekle
+                    // Separator line between them: don't draw on last transaction / Aralarındaki ayırıcı çizgi: son işlemde çizilmesin
                     if transaction.id != recent.last?.id {
                         Divider()
                     }
@@ -298,6 +311,7 @@ struct DashboardView: View {
         .cardStyle()
     }
     
+    /// UI (User Interface) component to show a single expense movement with category icon
     /// Kategori ikonlu tek bir harcama hareketi göstermek için UI (Kullanıcı Arayüzü) bileşeni
     private func transactionRow(_ transaction: Transaction) -> some View {
         HStack {
@@ -305,7 +319,7 @@ struct DashboardView: View {
                 .font(.title3)
                 .foregroundStyle(Color.categoryColor(transaction.category.color))
                 .frame(width: 36, height: 36)
-                // İkon arka planı kategori renginin %15 şeffaf hali
+                // Icon background is 15% transparent version of category color / İkon arka planı kategori renginin %15 şeffaf hali
                 .background(Color.categoryColor(transaction.category.color).opacity(0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             
@@ -322,9 +336,9 @@ struct DashboardView: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(transaction.type == .income ? "+" : "-")\(transaction.amount.formattedCurrency)")
                     .font(.subheadline.bold())
-                    // Gelirse yeşil giderse kırmızı renk
+                    // Green if income, red if expense / Gelirse yeşil giderse kırmızı renk
                     .foregroundStyle(transaction.type == .income ? Color.incomeGreen : Color.expenseRed)
-                Text(transaction.date.formattedShort) // Hangi tarihte olduğunu ekle
+                Text(transaction.date.formattedShort) // Add which date it is / Hangi tarihte olduğunu ekle
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

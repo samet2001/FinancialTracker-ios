@@ -7,11 +7,13 @@ import Foundation
 import SwiftData
 
 // MARK: - Transaction Type (İşlem Türü)
+/// Basic component indicating whether it is an income or an expense
 /// Gelir mi gider mi olduğunu belirten temel bileşen
 enum TransactionType: String, Codable, CaseIterable {
     case income = "income"
     case expense = "expense"
     
+    /// Turkish name to be shown in the user interface
     /// Kullanıcı arayüzünde gösterilecek Türkçe isim
     var displayName: String {
         switch self {
@@ -22,6 +24,7 @@ enum TransactionType: String, Codable, CaseIterable {
 }
 
 // MARK: - Transaction Category (İşlem Kategorisi)
+/// Provides more detailed grouping of expenses or incomes
 /// Harcama veya gelirlerin daha detaylı gruplandırılmasını sağlar
 enum TransactionCategory: String, Codable, CaseIterable, Identifiable {
     case salary = "salary"
@@ -39,6 +42,7 @@ enum TransactionCategory: String, Codable, CaseIterable, Identifiable {
     
     var id: String { rawValue }
     
+    /// Turkish category name to appear in the interface
     /// Arayüzde görünecek olan Türkçe kategori ismi
     var displayName: String {
         switch self {
@@ -57,6 +61,7 @@ enum TransactionCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
     
+    /// Apple SF Symbols icon name for the related category
     /// İlgili kategoriye ait Apple SF Symbols ikon adı
     var icon: String {
         switch self {
@@ -75,6 +80,7 @@ enum TransactionCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
     
+    /// System name of the theme color belonging to the related category
     /// İlgili kategoriye ait tema renginin sistem adı
     var color: String {
         switch self {
@@ -95,23 +101,26 @@ enum TransactionCategory: String, Codable, CaseIterable, Identifiable {
 }
 
 // MARK: - Transaction Model (İşlem Modeli)
+/// Basic income-expense model saved to the database with SwiftData
 /// SwiftData ile veritabanına kaydedilen temel gelir-gider modeli
 @Model
 final class Transaction {
-    var id: UUID // Benzersiz kimlik numarası
-    var title: String // İşlem başlığı (örn: "A101 Alışverişi")
-    var amount: Double // Tutar
-    var categoryRaw: String // Veritabanında saklanan kategori değeri
-    var typeRaw: String // Veritabanında saklanan tür (gelir/gider) değeri
-    var date: Date // İşlem tarihi
-    var note: String // İsteğe bağlı not
+    var id: UUID // Unique identifier number / Benzersiz kimlik numarası
+    var title: String // Transaction title (e.g., "A101 Shopping") / İşlem başlığı (örn: "A101 Alışverişi")
+    var amount: Double // Amount / Tutar
+    var categoryRaw: String // Category value stored in the database / Veritabanında saklanan kategori değeri
+    var typeRaw: String // Type (income/expense) value stored in the database / Veritabanında saklanan tür (gelir/gider) değeri
+    var date: Date // Transaction date / İşlem tarihi
+    var note: String // Optional note / İsteğe bağlı not
     
+    /// Converts to enum using the String value in the database
     /// Veritabanındaki String değeri kullanarak enum'a dönüştürür
     var category: TransactionCategory {
         get { TransactionCategory(rawValue: categoryRaw) ?? .other }
         set { categoryRaw = newValue.rawValue }
     }
     
+    /// Converts to enum using the String value in the database
     /// Veritabanındaki String değeri kullanarak enum'a dönüştürür
     var type: TransactionType {
         get { TransactionType(rawValue: typeRaw) ?? .expense }
